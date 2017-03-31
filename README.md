@@ -1,9 +1,9 @@
 # Tensorflow Quaternion
-An implementation of quaternions for and written in tensorflow. Fully derivable. Licensed under MIT License.
+An implementation of quaternions for and written in tensorflow. Fully derivable. Licensed under Apache 2.0 License.
 
 
-**Note: This project is currently in alpha status. Some functions have not even been tested yet.**
-**Most of the ToDos should be done by the 5th of April.  **
+**Note: This project is currently in alpha status. Some functions have not even been tested yet. Most of the ToDos should be done by the 5th of April.** 
+
 
 The tfquaternion module provides an implementation of quaternions as a tensorflow graph.
 The quaternion value can either be represented as `tf.Tensor` or `tf.Variable`.

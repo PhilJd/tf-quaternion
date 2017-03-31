@@ -2,9 +2,17 @@
 An implementation of quaternions for and written in tensorflow. Fully derivable. Licensed under MIT License.
 
 
-Note: This project is currently in beta status. 
+**Note: This project is currently in alpha status. Some functions have not even been tested yet.**
+**Most of the ToDos should be done by the 5th of April.  **
 
-The tfquaternion module provides an implementation of quaternions as a tensorflow graph. As all operations are derivable, the module can also be used to optimize a rotation of points in 3D space.
+The tfquaternion module provides an implementation of quaternions as a tensorflow graph.
+The quaternion value can either be represented as `tf.Tensor` or `tf.Variable`.
+As all operations are derivable, the module can be used to optimize a rotation of
+points in 3D space, given that a `tf.Variable` is used to represent the value.
+Other awesome features are:
+- Operations are scoped, so they appear nice and clean in your tensorboard graph.
+- Operators are implemented.
+
 
 Let's take a look at a simple rotation:
 ```
@@ -20,4 +28,4 @@ array([[ 1.,  0.,  0.],
 
 ```
 
-ToDo: Add an example of optimization + images.
+If you'd like to have a certain feature please check the ToDo file first before opening an issue.

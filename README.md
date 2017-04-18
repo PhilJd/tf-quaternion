@@ -1,5 +1,5 @@
 # Tensorflow Quaternion
-An implementation of quaternions for and written in tensorflow. Fully differntiable. Licensed under Apache 2.0 License.
+An implementation of quaternions for and written in tensorflow. Fully differentiable. Licensed under Apache 2.0 License.
 
 
 **Note: This project is currently in alpha status. Some functions have not even been tested yet. Most of the ToDos should be done by the 5th of April.** 

@@ -2,7 +2,7 @@
 An implementation of quaternions for and written in tensorflow. Fully differentiable. Licensed under Apache 2.0 License.
 
 
-**Note: This project is currently in alpha status. Some functions have not even been tested yet. ** 
+**Note: This project is currently in alpha status. Some functions have not even been tested yet.**
 
 
 The tfquaternion module provides an implementation of quaternions as a tensorflow graph.

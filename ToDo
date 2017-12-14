@@ -1,4 +1,5 @@
 - improve readme
+- add a batched version
 - add tests for all functions
-- transform to python package
 - add an example of optimization + images.
+- add transformation class that utilizes the quaternion. Make transformation efficient, i.e. for rotation+translation combine un-centering and translation vector

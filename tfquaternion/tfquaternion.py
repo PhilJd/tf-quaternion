@@ -1,4 +1,4 @@
-# Copyright Philipp Jund 2017. All Rights Reserved.
+# Copyright Philipp Jund (jundp@cs.uni-freiburg.de) 2017. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 
 """
 
-This small library implements quaternion operations with tensorflow.
-All operations are derivable.
+This small library implements quaternion operations in tensorflow.
+All operations are differentiable.
 
 """
 import numpy as np

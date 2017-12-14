@@ -1,8 +1,8 @@
 # Tensorflow Quaternion
-An implementation of quaternions written in tensorflow. Fully derivable. Licensed under Apache 2.0 License.
+An implementation of quaternions for tensorflow. Fully differentiable. Licensed under Apache 2.0 License.
 
 
-**Note: This project is currently in alpha status. Some functions have not even been tested yet. Most of the ToDos should be done by the 5th of April.** 
+**Note: This project is currently in alpha status. Some functions have not even been tested yet.**
 
 
 The tfquaternion module provides an implementation of quaternions as a tensorflow graph.
@@ -13,7 +13,19 @@ Other awesome features are:
 - Operations are scoped, so they appear nice and clean in your tensorboard graph.
 - Operators are implemented.
 
+### Installation
 
+To install the git version as development version run:
+```
+git clone https://github.com/PhilJd/tf-quaternion.git
+cd tf-quaternion
+pip install -e .
+```
+The -e option only links the working copy to the python site-packages,
+so to upgrade, you only need to run `git pull`.
+
+
+### Usage
 Let's take a look at a simple rotation:
 ```
 >>> import tfquaternion as tfq

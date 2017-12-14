@@ -1,3 +1,16 @@
+# Copyright Philipp Jund (jundp@cs.uni-freiburg.de) 2017. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import numpy as np
 import tensorflow as tf
 import tfquaternion as tfq
@@ -6,19 +19,19 @@ import tfquaternion as tfq
 class TfquaternionTest(tf.test.TestCase):
     ''' Tests for the module functions '''
     def test_point_to_quaternion(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test_from_rotation_matrix(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test_multiply(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test_divide(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
 
@@ -54,55 +67,55 @@ class QuaternionTest(tf.test.TestCase):
         
 
     def test__quaternions_to_tensors(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test___add__(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test___sub__(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test___mul__(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test___imul__(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test___div__(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test___idiv__(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test___repr__(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test_inverse(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test_normalized(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test_as_rotation_matrix(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test__validate_shape(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test__validate_type(self):
-        #raise NotImplementedError("Test not implemented")
+        # raise NotImplementedError("Test not implemented")
         pass
 
     def test__norm(self):

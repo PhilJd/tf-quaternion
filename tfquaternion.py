@@ -70,7 +70,7 @@ def divide(a, b):
     return Quaternion(tf.stack((w, x, y, z)))
 
 
-class Quaternion():
+class Quaternion(object):
 
     def __init__(self, initial_wxyz=(1.0, 0.0, 0.0, 0.0), dtype=tf.float32):
         """
@@ -80,10 +80,7 @@ class Quaternion():
                 - list/tuple/np.array
                 - Quaternion
                 Defaults to (1.0, 0.0, 0.0, 0.0)
-            dtype: The type to create the value tensor. Only considered if
-                initial_wxyz is passed as list, tuple or np.array. Otherwise
-                the type of the `Tensor` is used. This is to prevent silent
-                changes to the gradient type resulting in a different precision
+            dtype: The type to create the value tensor. 
                 Allowed types are float16, float32, float64.
 
         Returns:
@@ -94,27 +91,61 @@ class Quaternion():
             TypeError, either if the `Tensor` initial_wxyz's type is not float
                 or if initial_wxyz is not a Tensor/list/tuple etc.
         """
+        if not dtype.is_floating:
+            raise TypeError("Quaternion only supports floating point numbers")
+        self._validate_type(initial_wxyz)
+        self._validate_shape(initial_wxyz)
         if isinstance(initial_wxyz, (tf.Tensor, tf.Variable)):
-            self._validate_shape(initial_wxyz)
-            self._validate_type(initial_wxyz)
-            self._q = (initial_wxyz if initial_wxyz.dtype == dtype
-                       else tf.cast(initial_wxyz, dtype))
+            self._q = tf.cast(initial_wxyz, dtype)
         elif isinstance(initial_wxyz, (np.ndarray, list, tuple)):
-            self._validate_shape(initial_wxyz)
             self._q = tf.constant(initial_wxyz, dtype=dtype)
         elif isinstance(initial_wxyz, Quaternion):
-            tensor = initial_wxyz.value()
-            self._q = (tensor if tensor.dtype == dtype
-                       else tf.cast(tensor, dtype))
-        else:
-            raise TypeError("Can not convert object of type {} to Quaternion"
-                            "".format(type(initial_wxyz)))
+            self._q = tf.cast(initial_wxyz.value(), dtype)
 
     def value(self):
         """ Returns a `Tensor` which holds the value of the quaternion. Note
             that this does not return a reference, so you can not alter the
             quaternion through this.
         """
+        return self._q
+
+    def eval(self, session=None):
+        """In a session, computes and returns the value of this variable. """
+        return self._q.eval(session=session)
+
+    def _ref(self):
+        return self._q._ref()
+
+    @property
+    def dtype(self):
+        """The `DType` of this variable."""
+        return self._q.dtype
+
+    @property
+    def op(self):
+        """The `Operation` of this variable."""
+        return self._q.op
+
+    @property
+    def graph(self):
+        """The `Graph` of this variable."""
+        return self._q.graph
+
+    @property
+    def shape(self):
+        """The `TensorShape` of the variable. Is always [4].
+        
+        Returns:
+          A `TensorShape`.
+        """
+        return self._q.get_shape()
+
+    def get_shape(self):
+        """Alias of Quaternion.shape."""
+        return self.shape
+
+    def _as_graph_element(self):
+        """Conversion function for Graph.as_graph_element()."""
         return self._q
 
     @ staticmethod
@@ -151,6 +182,11 @@ class Quaternion():
         else:
             msg = "Quaternion Multiplication not implemented for this type."
             raise NotImplementedError(msg)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return False
 
     def __repr__(self):
         return "<tfq.Quaternion ({})>".format(self._q.__repr__()[1:-1])
@@ -197,13 +233,17 @@ class Quaternion():
         elif isinstance(x, np.ndarray) and x.shape != (4,):
                 raise ValueError(msg.format("np.array", x.shape))
         elif (isinstance(x, (tf.Tensor, tf.Variable))
-              and x.shape.as_list() != [4]):
+              and x.get_shape().as_list() != [4]):
                 raise ValueError(msg.format("tf.Tensor", x.shape.as_list()))
+        elif (isinstance(x, Quaternion)):
+            return
 
     @staticmethod
-    def _validate_type(x):
-        if not x.dtype.is_floating:
-            raise TypeError("Quaternion only supports floating point numbers")
+    def _validate_type(initial_val):
+        valid = (Quaternion, list, tuple, tf.Tensor, tf.Variable, np.ndarray)
+        if not isinstance(initial_val, valid):
+            raise TypeError("Can not convert object of type {} to Quaternion"
+                            "".format(type(initial_val)))
 
     @scope_wrapper
     def _norm(self):

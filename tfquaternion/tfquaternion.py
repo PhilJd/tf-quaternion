@@ -18,89 +18,173 @@ This small library implements quaternion operations in tensorflow.
 All operations are differentiable.
 
 """
-import numpy as np
 import tensorflow as tf
 
 
+# ____________________________________________________________________________
+#                     Quaternion module functions
 def scope_wrapper(func, *args, **kwargs):
+    """ Creates a tf name scope around the function with its name. """
     def scoped_func(*args, **kwargs):
-        with tf.name_scope("quat_{}".format(func.__name__)):
+        with tf.name_scope("quaternion_{}".format(func.__name__)):
             return func(*args, **kwargs)
     return scoped_func
 
 
 @scope_wrapper
-def point_to_quaternion():
-    raise NotImplementedError()
+def vector3d_to_quaternion(x):
+    """ Converts a tensor of 3D vectors to a quaternion by prepending a 0
+        to the last dimension.
+
+    Args:
+        x: A `tf.Tensor` of rank R, the last dimension must be 3.
+
+    Returns:
+        A `Quaternion` of Rank R with the last dimension being 4.
+
+    Raises:
+        ValueError, if the last dimension of x is not 3.
+    """
+    x = tf.convert_to_tensor(x)
+    if x.shape[-1] != 3:
+        raise ValueError("The last dimension of x must be 3.")
+    Quaternion.validate_type(x)
+    return Quaternion(tf.pad(x, (len(x.shape) - 1) * [[0, 0]] + [[1, 0]]))
 
 
 @scope_wrapper
-def from_rotation_matrix():
-    raise NotImplementedError()
+def quaternion_to_vector3d(q):
+    """ Removes the w component(s) of quaternion(s) q. """
+    return q.value()[..., 1:]
 
 
 @scope_wrapper
-def multiply(a, b):
-    if not isinstance(a, Quaternion) and not isinstance(b, Quaternion):
-        msg = "Multiplication is currently only implemented " \
-              "for quaternion * quaternion"
-        raise NotImplementedError(msg)
-    w1, x1, y1, z1 = tf.unstack(a.value())
-    w2, x2, y2, z2 = tf.unstack(b.value())
+def _prepare_tensor_for_div_mul(x):
+    """ Prepares the tensor x for division/multiplication by
+        a) converting a to a tensor if necessary
+        b) prepending a 0 in the last dimension if the last dimension is 3
+        c) validating the type and shape
+    """
+    x = tf.convert_to_tensor(x)
+    if x.shape[-1] == 3:
+        x = vector3d_to_quaternion(x)
+    Quaternion.validate_shape(x)
+    Quaternion.validate_type(x)
+    return x
+
+
+@scope_wrapper
+def quaternion_multiply(a, b):
+    """ Multiplies two quaternion tensors. Note that this differs from
+        tf.multiply and is not commutative.
+
+    Args:
+        a, b: A `tf.Tensor` with shape (..., 4).
+
+    Returns:
+        A `Quaternion`.
+    """
+    a = _prepare_tensor_for_div_mul(a)
+    b = _prepare_tensor_for_div_mul(b)
+    w1, x1, y1, z1 = tf.unstack(a, axis=-1)
+    w2, x2, y2, z2 = tf.unstack(b, axis=-1)
     w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
     x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
     y = w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2
     z = w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2
-    return Quaternion(tf.stack((w, x, y, z)))
+    return Quaternion(tf.squeeze(tf.stack((w, x, y, z), axis=-1)))
 
 
 @scope_wrapper
-def divide(a, b):
-    if not isinstance(a, Quaternion) and not isinstance(b, Quaternion):
-        msg = "Division is currently only implemented " \
-              "for quaternion \ quaternion"
-        raise NotImplementedError(msg)
-    w1, x1, y1, z1 = tf.unstack(a.value())
-    w2, x2, y2, z2 = tf.unstack(b.value())
-    bnorm = b._norm()
-    w = (w1*w2 + x1*x2 + y1*y2 + z1*z2) / bnorm,
-    x = (-w1*x2 + x1*w2 - y1*z2 + z1*y2) / bnorm,
-    y = (-w1*y2 + x1*z2 + y1*w2 - z1*x2) / bnorm,
+def quaternion_divide(a, b):
+    """ Divides a by quaternion tensor b. A may be a scalar value
+
+    Args:
+        a, b: A `tf.Tensor` with shape (..., 4).
+
+    Returns:
+        A `Quaternion`.
+    """
+    a = tf.convert_to_tensor(a)
+    if a.shape == () or a.shape[-1] == 1:  # scalar
+        return Quaternion(tf.multiply(a, b.conj()) / Quaternion(b).norm())
+    bnorm = tf.squeeze(Quaternion(b).norm())
+    w1, x1, y1, z1 = tf.unstack(a, axis=-1)
+    w2, x2, y2, z2 = tf.unstack(b, axis=-1)
+    w = (w1*w2 + x1*x2 + y1*y2 + z1*z2) / bnorm
+    x = (-w1*x2 + x1*w2 - y1*z2 + z1*y2) / bnorm
+    y = (-w1*y2 + x1*z2 + y1*w2 - z1*x2) / bnorm
     z = (-w1*z2 - x1*y2 + y1*x2 + z1*w2) / bnorm
-    return Quaternion(tf.stack((w, x, y, z)))
+    return Quaternion(tf.squeeze(tf.stack((w, x, y, z), axis=-1)))
 
 
+@scope_wrapper
+def quaternion_conjugate(q):
+    """ Computes the conjugate of q, i.e. returns [w, -x, -y, -z]. """
+    return Quaternion(tf.multiply(q, [1.0, -1.0, -1.0, -1.0]))
+
+
+@scope_wrapper
+def rotate_vector_by_quaternion(q, v):
+    """ Rotates a vector (or tensor with last dimension of 3) by q,
+        i.e. it computes v' = q * v * conjugate(q). 
+        Faster version, found here:
+        https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-multiplication/
+    
+    Args:
+        q: A `Quaternion` or `tf.Tensor` with shape (..., 4)
+        v: A `tf.Tensor` with shape (..., 3)
+
+    """
+    return quaternion_to_vector3d(q * vector3d_to_quaternion(v) * q.inverse())
+    #v = tf.convert_to_tensor(v)
+    #q = q.normalized()
+    #w = q.value()[..., 0]
+    #print("w.shape", w.shape)
+    #print("v.shape", w.shape)
+    #q_xyz = q.value()[..., 1:]
+    #print("q_xyz.shape", q_xyz.shape)
+    #t = 2 * tf.cross(q_xyz, v)
+    #print("t.shape", t.shape)
+    #return v + tf.expand_dims(w, axis=-1) * t + tf.cross(q_xyz, t)
+
+
+# ____________________________________________________________________________
+#                      The quaternion class
 class Quaternion(object):
+    """ Multidimensional quaternion. The API resembles that of tf.Variable. """
+    
+    # When trying to scale the components of the Quaternion individually
+    # by right-multiplying a tf.Quaternion with a 4-dimensional np.array a, the
+    # default numpy behaviour is to call `Quaternion.__rmul__(i)` for each
+    # element i in a, resulting in 4 tfq.Quaternions instead of one.
+    # Setting __array_priority__ = 1000 fixes this. (For further reference see
+    # https://stackoverflow.com/questions/40694380/forcing-multiplication-to-use-rmul-instead-of-numpy-array-mul-or-byp)
+    __array_priority__ = 1000
 
-    def __init__(self, initial_wxyz=(1.0, 0.0, 0.0, 0.0), dtype=tf.float32):
+    def __init__(self, wxyz=(1, 0, 0, 0), dtype=tf.float32, name=None):
         """
         Args:
-            initial_wxyz: The values for w, x, y, z. Must have shape=[4].
-                - `tf.Tensor` or `tf.Variable` of type float16/float32/float64
-                - list/tuple/np.array
-                - Quaternion
+            wxyz: The values for w, x, y, z, a `tf.Tensor` with shape (..., 4).
+                Note that quaternions only support floating point numbers.
                 Defaults to (1.0, 0.0, 0.0, 0.0)
-            dtype: The type to create the value tensor. 
-                Allowed types are float16, float32, float64.
+            dtype: The type used for the quaternion, must be a floating point
+                number, i.e. one of tf.float16, tf.float32, tf.float64.
+            name: An optional name for the tensor.
 
         Returns:
             A Quaternion.
 
         Raises:
-            ValueError, if the shape of initial_wxyz is not [4].
-            TypeError, either if the `Tensor` initial_wxyz's type is not float
-                or if initial_wxyz is not a Tensor/list/tuple etc.
+            ValueError, if wxyz is a `tf.Tensor` and the tensors dtype differs
+                from the given dtype.
+            ValueError, if the last dimension of wxyz is not 4.
+            TypeError, if dtype is not a float.
         """
-        if not dtype.is_floating:
-            raise TypeError("Quaternion only supports floating point numbers")
-        self._validate_type(initial_wxyz)
-        self._validate_shape(initial_wxyz)
-        if isinstance(initial_wxyz, (tf.Tensor, tf.Variable)):
-            self._q = tf.cast(initial_wxyz, dtype)
-        elif isinstance(initial_wxyz, (np.ndarray, list, tuple)):
-            self._q = tf.constant(initial_wxyz, dtype=dtype)
-        elif isinstance(initial_wxyz, Quaternion):
-            self._q = tf.cast(initial_wxyz.value(), dtype)
+        self._q = tf.convert_to_tensor(wxyz, dtype=dtype, name=name)
+        self.name = name if name else ""
+        self.validate_type(self._q)
+        self.validate_shape(self._q)  # check that shape is (..., 4)
 
     def value(self):
         """ Returns a `Tensor` which holds the value of the quaternion. Note
@@ -110,7 +194,7 @@ class Quaternion(object):
         return self._q
 
     def eval(self, session=None):
-        """In a session, computes and returns the value of this variable. """
+        """ In a session, computes and returns the value of this quaternion. """
         return self._q.eval(session=session)
 
     def _ref(self):
@@ -118,23 +202,23 @@ class Quaternion(object):
 
     @property
     def dtype(self):
-        """The `DType` of this variable."""
+        """The `DType` of this quaternion. """
         return self._q.dtype
 
     @property
     def op(self):
-        """The `Operation` of this variable."""
+        """The `Operation` of this quaternion. """
         return self._q.op
 
     @property
     def graph(self):
-        """The `Graph` of this variable."""
+        """The `Graph` of this quaternion. """
         return self._q.graph
 
     @property
     def shape(self):
-        """The `TensorShape` of the variable. Is always [4].
-        
+        """The `TensorShape` of the variable. Is always [..., 4].
+
         Returns:
           A `TensorShape`.
         """
@@ -148,66 +232,101 @@ class Quaternion(object):
         """Conversion function for Graph.as_graph_element()."""
         return self._q
 
-    @ staticmethod
-    def _quaternions_to_tensors(quats):
-        return [q.value() if isinstance(q, Quaternion) else q for q in quats]
+    def __add__(self, other):
+        return Quaternion(tf.add(self._q, tf.convert_to_tensor(other)))
 
-    def __add__(a, b):
-        val_a, val_b = Quaternion._quaternions_to_tensors((a, b))
-        return Quaternion(val_a + val_b)
+    def __radd__(self, other):
+        return Quaternion(tf.add(tf.convert_to_tensor(other), self._q))
 
-    def __sub__(a, b):
-        val_a, val_b = Quaternion._quaternions_to_tensors((a, b))
-        return Quaternion(val_a - val_b)
+    def __sub__(self, other):
+        return Quaternion(tf.subtract(self._q, tf.convert_to_tensor(other)))
 
-    def __mul__(a, b):
-        return multiply(a, b)
+    def __rsub__(self, other):
+        return Quaternion(tf.subtract(tf.convert_to_tensor(other), self._q))
 
-    def __imul__(self, other):
+    def __mul__(self, other):
         if isinstance(other, Quaternion):
-            return multiply(self, other)
-        #elif isinstance(other, tf.Variable) or isinstance(other, tf.Tensor):
-        #    self._validate_shape(other)
-        #    return multiply(self, Quaternion(other))
-        else:
-            msg = "Quaternion Multiplication not implemented for this type."
-            raise NotImplementedError(msg)
+            return quaternion_multiply(self, other)
+        return Quaternion(tf.multiply(self._q, tf.convert_to_tensor(other)))
 
-    def __div__(a, b):
-        return divide(a, b)
+    def __rmul__(self, other):
+        # This is only called when __mul__ fails, so 'other' can not
+        # be a Quaternion.
+        return Quaternion(tf.multiply(self._q, tf.convert_to_tensor(other)))
 
-    def __idiv__(self, other):
+    def __div__(self, other):
         if isinstance(other, Quaternion):
-            return divide(self, other)
-        else:
-            msg = "Quaternion Multiplication not implemented for this type."
-            raise NotImplementedError(msg)
+            return quaternion_divide(self, other)
+        return tf.divide(self._q, tf.convert_to_tensor(other))
+        
 
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return False
+    def __rdiv__(self, other):
+        if (isinstance(other, Quaternion) or
+                tf.convert_to_tensor(other).shape == () or
+                tf.convert_to_tensor(other).shape[-1] == 1):  # scalar
+            return quaternion_divide(other, self)
+        return tf.divide(tf.convert_to_tensor(other), self._q)
+
+    def __truediv__(self, other):
+        return self.__div__(other)
+
+    def __rtruediv__(self, other):
+        return self.__rdiv__(other)
+
+    def __neg__(self):
+        return Quaternion(-1 * self._q)
+
+    # rich comparisons
+    def __lt__(self, other):  # <
+        return tf.less(self._q, other)
+
+    def __le__(self, other):  # <=
+        return tf.less_equal(self._q, other)
+
+    def __eq__(self, other):  # ==
+        return tf.equal(self._q, other)
+
+    def __ne__(self, other):  # !=
+        return tf.not_equal(self._q, other)
+
+    def __gt__(self, other):  # >
+        return tf.greater(self._q, other)
+
+    def __ge__(self, other):  # >=
+        return tf.greater_equal(self._q, other)
 
     def __repr__(self):
-        return "<tfq.Quaternion ({})>".format(self._q.__repr__()[1:-1])
+        return "<tfq.Quaternion '{}' ({})>".format(self.name,
+                                                   self._q.__repr__()[1:-1])
+
+    @scope_wrapper
+    def conjugate(self):
+        """ Computes the conjugate of self.q, i.e. returns [w, -x, -y, -z]. """
+        return quaternion_conjugate(self)
+
+    def conj(self):
+        """ Computes the conjugate of self.q, i.e. returns [w, -x, -y, -z].
+            Alias for Quaternion.conjugate().
+        """
+        return quaternion_conjugate(self)
+
 
     @scope_wrapper
     def inverse(self):
-        w, x, y, z = tf.unpack(tf.divide(self._q, self._norm()))
-        return Quaternion(w, -x, -y, -z)
+        return Quaternion(tf.convert_to_tensor(self.conjugate()) / self.norm())
 
     @scope_wrapper
     def normalized(self):
-        return Quaternion(tf.divide(self._q, self._abs()))
+        return Quaternion(tf.divide(self._q, self.abs()))
 
     @scope_wrapper
     def as_rotation_matrix(self):
-        """ Calculates the rotation matrix. See
-        [http://www.euclideanspace.com/maths/geometry/rotations/
-         conversions/quaternionToMatrix/]
+        """ Calculates the corresponding rotation matrix. See
+            http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/
 
         Returns:
-            A 3x3 `Tensor`, the rotation matrix
+            A `tf.Tensor` with R+1 dimensions and
+            shape [d_1, ..., d_(R-1), 3, 3], the rotation matrix
 
         """
         # helper functions
@@ -220,35 +339,46 @@ class Quaternion(object):
         def tr_sub(a, b, c, d):  # computes triangle entries with subtraction
             return 2 * a * b - 2 * c * d
 
-        w, x, y, z = tf.unstack(self.normalized().value())
-        return [[diag(y, z), tr_sub(x, y, z, w), tr_add(x, z, y, w)],
-                [tr_add(x, y, z, w), diag(x, z), tr_sub(y, z, x, w)],
-                [tr_sub(x, z, y, w), tr_add(y, z, x, w), diag(x, y)]]
+        w, x, y, z = tf.unstack(self.normalized().value(), axis=-1)
+        m = [[diag(y, z), tr_sub(x, y, z, w), tr_add(x, z, y, w)],
+             [tr_add(x, y, z, w), diag(x, z), tr_sub(y, z, x, w)],
+             [tr_sub(x, z, y, w), tr_add(y, z, x, w), diag(x, y)]]
+        return tf.stack([tf.stack(m[i], axis=-1) for i in range(3)], axis=-2)
 
     @staticmethod
-    def _validate_shape(x):
-        msg = "Can't create a quaternion with shape [4] from {} with shape {}."
-        if isinstance(x, (list, tuple)) and np.array(x).shape != (4,):
-                raise ValueError(msg.format("list/tuple", np.array(x).shape))
-        elif isinstance(x, np.ndarray) and x.shape != (4,):
-                raise ValueError(msg.format("np.array", x.shape))
-        elif (isinstance(x, (tf.Tensor, tf.Variable))
-              and x.get_shape().as_list() != [4]):
-                raise ValueError(msg.format("tf.Tensor", x.shape.as_list()))
-        elif (isinstance(x, Quaternion)):
-            return
+    def validate_shape(x):
+        """ Raises a value error if x.shape ist not (..., 4). """
+        error_msg = ("Can't create a quaternion from a tensor with shape {}."
+                     "The last dimension must be 4.")
+        # Check is performed during graph construction. If your dimension
+        # is unknown, tf.reshape(x, (-1, 4)) might work.
+        if x.shape[-1] != 4:
+            raise ValueError(error_msg.format(x.shape))
 
     @staticmethod
-    def _validate_type(initial_val):
-        valid = (Quaternion, list, tuple, tf.Tensor, tf.Variable, np.ndarray)
-        if not isinstance(initial_val, valid):
-            raise TypeError("Can not convert object of type {} to Quaternion"
-                            "".format(type(initial_val)))
+    def validate_type(x):
+        """ Raises a type error if the dtype of x is not float. """
+        if not x.dtype.is_floating:
+            raise TypeError("Quaternion: dtype must be one of float16/32/64.")
 
     @scope_wrapper
-    def _norm(self):
-        return tf.reduce_sum(tf.square(self._q))
+    def norm(self):
+        """ Returns the norm of the quaternion. """
+        return tf.reduce_sum(tf.square(self._q), axis=-1, keep_dims=True)
 
     @scope_wrapper
-    def _abs(self):
+    def abs(self):
+        """ Returns the square root of the norm of the quaternion. """
         return tf.sqrt(tf.reduce_sum(tf.square(self._q)))
+
+
+# ____________________________________________________________________________
+#                          quaternion to tensor conversion
+def quaternion_to_tensor(x, dtype=None, name=None, as_ref=None):
+    """ Converts a Quaternion to a tensor. """
+    # Todo(phil): handle as_ref correctly
+    return tf.convert_to_tensor(x.value(), dtype, name)
+
+
+tf.register_tensor_conversion_function(Quaternion, quaternion_to_tensor,
+                                       priority=100)

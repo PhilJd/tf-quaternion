@@ -26,7 +26,25 @@ so to upgrade, you only need to run `git pull`.
 
 
 ### Usage
-Let's take a look at a simple rotation:
+`tfquaternion` offers module functions for the basic quaternion arithmetic
+operations as well as a `Quaternion` class which supports the relevant magic
+methods. This is similar to the tensorflow API, e.g. `tfq.quaternion_multiply`
+vs. `tf.multiply` and `tfq.Quaternion` vs `tf.Tensor`. Note that all functions
+starting with `tf.quaternion_...` assume that it's arguments are `tf.Tensor`s
+(or `tfq.Quaternion`s) that can be casted to `tfq.Quaternion`, i.e. the shape
+must be (..., 4).
+
+Before getting started, an important note on the division:
+This library resembles the division behaviour of
+(mobles quaternion)[https://github.com/moble/quaternion/]. While in
+general the division operator is not defined (from the notation q1/q2 one can
+not conclude if q1/q2 = q1 * q2^-1 or q1/q2 = q2^-1 * q1), we follow moble's
+implementation, i.e.  `tfq.quaternion_divide` and `Quaternion.__truediv__`
+compute `q1/q2 = q1 * 1/q2`.
+
+
+#### Example
+A simple rotation by a quaternion can look like this:
 ```
 >>> import tfquaternion as tfq
 >>> import tensorflow as tf
@@ -40,4 +58,16 @@ array([[ 1.,  0.,  0.],
 
 ```
 
-If you'd like to have a certain feature please check the ToDo file first before opening an issue.
+#### API
+
+##### class Quaternion
+The usage of the `*`-Operator depends on the multiplier. If the multiplier is a
+Quaternion, quaternion multiplication is performed while multiplication with
+a tf.Tensor uses tf.multiply. The behaviour of division is similar, except if
+the dividend is a scalar, then the inverse of the quaternion is computed.
+```
+tfq.Quaternion([1, 0, 0, 0]) * tfq.Quaternion([0, 4, 0, 0])
+>>> tfq.Quaternion([0, 4, 0, 0)
+tfq.Quaternion([1, 0, 0, 0]) * tf.Tensor([0, 4, 0, 0])
+>>> tf.Quaternion([0, 0, 0, 0)
+```

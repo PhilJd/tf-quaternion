@@ -1,21 +1,20 @@
 # Tensorflow Quaternion
-An implementation of quaternions for tensorflow. Fully differentiable. Licensed under Apache 2.0 License.
+An implementation of quaternions for tensorflow. Fully differentiable.
 
+The tfquaternion module provides an implementation of quaternions as a
+tensorflow graph.
+`tfquaternion` offers module functions for the basic quaternion arithmetic
+operations as well as a `Quaternion` class which supports the relevant magic
+methods. This is similar to the tensorflow API, e.g. `tfq.quaternion_multiply`
+vs. `tf.multiply` and `tfq.Quaternion` vs `tf.Tensor`. Note that all functions
+starting with `tf.quaternion_...` assume that it's arguments are `tf.Tensor`s
+(or `tfq.Quaternion`s) that can be casted to `tfq.Quaternion`, i.e. the shape
+must be (..., 4).
 
-**Note: This project is currently in alpha status. Some functions have not even been tested yet.**
-
-
-The tfquaternion module provides an implementation of quaternions as a tensorflow graph.
-The quaternion value can either be represented as `tf.Tensor` or `tf.Variable`.
-As all operations are derivable, the module can be used to optimize a rotation of
-points in 3D space, given that a `tf.Variable` is used to represent the value.
-Other awesome features are:
-- Operations are scoped, so they appear nice and clean in your tensorboard graph.
-- Operators are implemented.
 
 ### Installation
 
-To install the git version as development version run:
+To install the git version as development package run:
 ```
 git clone https://github.com/PhilJd/tf-quaternion.git
 cd tf-quaternion
@@ -26,13 +25,6 @@ so to upgrade, you only need to run `git pull`.
 
 
 ### Usage
-`tfquaternion` offers module functions for the basic quaternion arithmetic
-operations as well as a `Quaternion` class which supports the relevant magic
-methods. This is similar to the tensorflow API, e.g. `tfq.quaternion_multiply`
-vs. `tf.multiply` and `tfq.Quaternion` vs `tf.Tensor`. Note that all functions
-starting with `tf.quaternion_...` assume that it's arguments are `tf.Tensor`s
-(or `tfq.Quaternion`s) that can be casted to `tfq.Quaternion`, i.e. the shape
-must be (..., 4).
 
 Before getting started, an important note on the division:
 This library resembles the division behaviour of

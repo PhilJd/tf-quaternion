@@ -6,6 +6,11 @@ dirname = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(dirname, 'README.md')) as f:
     long_description = f.read()
 
+# To update pip package run:
+# python setup.py sdist && python setup.py bdist_wheel && twine upload dist/*
+
+
+
 setup(
     name='tfquaternion',
     version='0.1',
@@ -30,9 +35,9 @@ setup(
         'Development Status :: 3 - Alpha',
 
         'Intended Audience :: Developers',
-        'Topic :: Software Development :: Machine Learning',
+        'Topic :: Scientific/Engineering',
 
-        'License :: OSI Approved :: Apache License',
+        'License :: OSI Approved :: Apache Software License',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.

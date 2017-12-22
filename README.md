@@ -48,10 +48,7 @@ A simple rotation by a quaternion can look like this:
 >>> points = tf.constant([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=tf.float32)
 >>> quat = tfq.Quaternion([0, 1, 0, 0])  rotate by 180 degrees around x axis
 >>> s.run(tf.matmul(quat.as_rotation_matrix(), points))
-array([[ 1.,  0.,  0.],
-       [ 0., -1.,  0.],
-       [ 0.,  0., -1.]], dtype=float32)
-
+array([[ 1.,  0.,  0.], [ 0., -1.,  0.], [ 0.,  0., -1.]], dtype=float32)
 ```
 
 #### API

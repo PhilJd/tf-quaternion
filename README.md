@@ -11,6 +11,10 @@ starting with `tf.quaternion_...` assume that it's arguments are `tf.Tensor`s
 (or `tfq.Quaternion`s) that can be casted to `tfq.Quaternion`, i.e. the shape
 must be (..., 4).
 
+This implementation is mostly compatible with a small subset of
+[moble's quaternion implementation](https://github.com/moble/quaternion/)
+(ensured by using slightly adapted versions of his tests). One major difference
+is that it is type specific as is tensorflow.
 
 ### Installation
 
@@ -28,7 +32,7 @@ so to upgrade, you only need to run `git pull`.
 
 Before getting started, an important note on the division:
 This library resembles the division behaviour of
-(mobles quaternion)[https://github.com/moble/quaternion/]. While in
+[moble's quaternion](https://github.com/moble/quaternion/). While in
 general the division operator is not defined (from the notation q1/q2 one can
 not conclude if q1/q2 = q1 * q2^-1 or q1/q2 = q2^-1 * q1), we follow moble's
 implementation, i.e.  `tfq.quaternion_divide` and `Quaternion.__truediv__`

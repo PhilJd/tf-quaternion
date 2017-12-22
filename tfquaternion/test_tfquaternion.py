@@ -17,6 +17,7 @@
 # These tests mostly follow moble's quaternion tests (under MIT license):
 # https://github.com/moble/quaternion/blob/master/test/test_quaternion.py
 
+from __future__ import division
 import itertools
 import numpy as np
 import tensorflow as tf
@@ -214,10 +215,8 @@ class TfquaternionTest(AutoEvalTestCase):
         qs_np, qs_tf = get_quaternions()
         with self.test_session():
             for q in qs_tf[QS_FINITENONZERO]:
-                #print(q.eval())
                 rotated = q * tfq.vector3d_to_quaternion(v) * q.inverse()
                 rotated = tfq.quaternion_to_vector3d(rotated)
-                #print("rotated.eval()", rotated.eval())
                 self.assertAllClose(tfq.rotate_vector_by_quaternion(q, v),
                                     rotated)
 

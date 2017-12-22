@@ -13,7 +13,7 @@ with open(os.path.join(dirname, 'README.md')) as f:
 
 setup(
     name='tfquaternion',
-    version='0.1',
+    version='0.1.1',
     description="A differentiable quaternion implementation in tensorflow.",
     long_description=long_description,
     url='https://github.com/PhilJd/tf-quaternion',

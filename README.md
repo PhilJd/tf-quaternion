@@ -17,8 +17,11 @@ This implementation is mostly compatible with a small subset of
 is that it is type specific as is tensorflow.
 
 ### Installation
-
-To install the git version as development package run:
+You can either use pypi
+```
+pip install tfquaternion
+```
+or install the latest version from git as development package:
 ```
 git clone https://github.com/PhilJd/tf-quaternion.git
 cd tf-quaternion

@@ -13,8 +13,10 @@ must be (..., 4).
 
 This implementation is mostly compatible with a small subset of
 [moble's quaternion implementation](https://github.com/moble/quaternion/)
-(ensured by using slightly adapted versions of his tests). One major difference
-is that it is type specific as is tensorflow.
+(ensured by using slightly adapted versions of his tests). HOwever, there are
+at least two major differences: First, tfquaternion is type specific as is
+tensorflow, i.e. two quaternions of different dtypes can not be multiplied.
+Second, tfquaternion supports operations on arrays of quaternions.
 
 ### Installation
 You can either use pypi

@@ -10,10 +10,9 @@ with open(os.path.join(dirname, 'README.md')) as f:
 # python setup.py sdist && python setup.py bdist_wheel && twine upload dist/*
 
 
-
 setup(
     name='tfquaternion',
-    version='0.1.2',
+    version='0.1.3',
     description="A differentiable quaternion implementation in tensorflow.",
     long_description=long_description,
     url='https://github.com/PhilJd/tf-quaternion',

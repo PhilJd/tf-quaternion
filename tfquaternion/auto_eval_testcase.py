@@ -39,6 +39,7 @@
 
 
 import tensorflow as tf
+import tfquaternion as tfq
 
 
 class AutoEvalTestCase(tf.test.TestCase):

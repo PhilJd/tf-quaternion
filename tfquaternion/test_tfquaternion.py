@@ -46,16 +46,16 @@ def get_quaternions():
                             0.36514837167011074230464652186720,
                             0.54772255750516611345696978280080,
                             0.73029674334022148460929304373440],
-                            dtype=np.float32)
+                           dtype=np.float32)
     qlog = np.array([1.7959088706354, 0.515190292664085,
                      0.772785438996128, 1.03038058532817], dtype=np.float32)
     qexp = np.array([2.81211398529184, -0.392521193481878,
                      -0.588781790222817, -0.785042386963756], dtype=np.float32)
-    qmultidim = np.array([[1.1,  2.2, 3.3, 4.4], [1.1,  2.2, 3.3, 4.4]],
+    qmultidim = np.array([[1.1, 2.2, 3.3, 4.4], [1.1, 2.2, 3.3, 4.4]],
                          dtype=np.float32)
     np_quats = np.array([q_nan1, q_inf1, q_minf1, q_0, q_1, x, y, z, q, qneg,
                          qbar, qnormalized, qlog, qexp, qmultidim],
-                         dtype=object)
+                        dtype=object)
     tf_quats = np.array([tfq.Quaternion(q_np) for q_np in np_quats])
     return np_quats, tf_quats
 
@@ -373,7 +373,7 @@ class QuaternionTest(AutoEvalTestCase):
         pass
 
     def test__validate_shape(self):
-        self.assertRaises(ValueError, tfq.Quaternion, [1,2,3])
+        self.assertRaises(ValueError, tfq.Quaternion, [1, 2, 3])
 
     def test__validate_type(self):
         self.assertRaises(TypeError, tfq.Quaternion, dtype=tf.int32)
@@ -386,12 +386,14 @@ class QuaternionTest(AutoEvalTestCase):
 
     def test_abs(self):
         delta = 0.00001
+        q1 = tfq.Quaternion((1, 2, 3, 4))
+        q2 = tfq.Quaternion((0, 0, 0, 0))
         with self.test_session(use_gpu=True):
-            self.assertAlmostEqual(tfq.Quaternion((1, 2, 3, 4)).abs(),
-                                   5.47722, delta=delta)
-            self.assertAlmostEqual(tfq.Quaternion((-1, -2, -3, -4)).abs(),
-                                   5.47722, delta=delta)
-            self.assertAllEqual(tfq.Quaternion((0, 0, 0, 0)).abs(), 0.0)
+            self.assertAlmostEqual(q1.abs(), [5.47722], delta=delta)
+            self.assertAlmostEqual((q1 * -1.0).abs(), [5.47722], delta=delta)
+            self.assertAllEqual(q2.abs(), [0.0])
+            self.assertAllClose(tfq.Quaternion([q1.value(), q2.value()]).abs(),
+                                [[5.47722], [0.0]], atol=delta)
 
 
 if __name__ == "__main__":

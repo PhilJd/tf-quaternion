@@ -362,14 +362,14 @@ class Quaternion(object):
             raise TypeError("Quaternion: dtype must be one of float16/32/64.")
 
     @scope_wrapper
-    def norm(self):
+    def norm(self, keepdims=True):
         """ Returns the norm of the quaternion. """
-        return tf.reduce_sum(tf.square(self._q), axis=-1, keep_dims=True)
+        return tf.reduce_sum(tf.square(self._q), axis=-1, keep_dims=keepdims)
 
     @scope_wrapper
-    def abs(self):
+    def abs(self, keepdims=True):
         """ Returns the square root of the norm of the quaternion. """
-        return tf.sqrt(tf.reduce_sum(tf.square(self._q)))
+        return tf.sqrt(self.norm(keepdims))
 
 
 # ____________________________________________________________________________

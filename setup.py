@@ -10,6 +10,19 @@ with open(os.path.join(dirname, 'README.md')) as f:
 # python setup.py sdist && python setup.py bdist_wheel && twine upload dist/*
 
 
+# check if tensorflow is installed. If it's not, add it to dependencies. This
+# is to prevent replacement of existing tf versions (e.g. tf-nightly)
+
+requirements = []
+try:
+    import tensorflow as tf
+except ImportError:
+    # unfortunately pip suppresses this warning by default
+    print("WARNING: Installing CPU-only version of tensorflow. If you have a"
+          "GPU and CUDA available consider installing tensorflow-gpu.")
+    requirements += ['tensorflow']
+
+
 setup(
     name='tfquaternion',
     version='0.1.3',
@@ -22,7 +35,8 @@ setup(
 
     keywords='quaternion tensorflow differentiable',
     packages=find_packages(),
-    install_requires=['numpy', 'tensorflow'],
+
+    install_requires=['numpy'] + requirements,
 
     license='Apache 2.0',
 

@@ -397,6 +397,4 @@ class QuaternionTest(AutoEvalTestCase):
 
 
 if __name__ == "__main__":
-    a = TfquaternionTest()
-    a.test_rotate_vector_by_quaternion()
-    #tf.test.main()
+    tf.test.main()

@@ -15,7 +15,7 @@ with open(os.path.join(dirname, 'README.md')) as f:
 
 requirements = []
 try:
-    import tensorflow as tf
+    import tensorflow
 except ImportError:
     # unfortunately pip suppresses this warning by default
     print("WARNING: Installing CPU-only version of tensorflow. If you have a"
@@ -25,7 +25,7 @@ except ImportError:
 
 setup(
     name='tfquaternion',
-    version='0.1.4',
+    version='0.1.5',
     description="A differentiable quaternion implementation in tensorflow.",
     long_description=long_description,
     url='https://github.com/PhilJd/tf-quaternion',

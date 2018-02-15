@@ -125,15 +125,19 @@ def quaternion_conjugate(q):
 
 
 @scope_wrapper
-def rotate_vector_by_quaternion(q, v):
+def rotate_vector_by_quaternion(q, v, q_ndims=None, v_ndims=None):
     """ Rotates a vector (or tensor with last dimension of 3) by q,
         i.e. it computes v' = q * v * conjugate(q). 
         Faster version, found here:
         https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-multiplication/
-    
+
     Args:
         q: A `Quaternion` or `tf.Tensor` with shape (..., 4)
         v: A `tf.Tensor` with shape (..., 3)
+        q_ndims: The number of dimensions of q. Only necessary to specify if
+            the shape of q is unknown.
+        v_ndims: The number of dimensions of v. Only necessary to specify if
+            the shape of v is unknown.
 
     """
     v = tf.convert_to_tensor(v)
@@ -142,9 +146,13 @@ def rotate_vector_by_quaternion(q, v):
     q_xyz = q.value()[..., 1:]
     # Broadcast shapes. Todo(phil): Prepare a pull request which adds
     # broadcasting support to tf.cross
-    for _ in range(v.shape.ndims - q_xyz.shape.ndims):
+    if q_xyz.shape.ndims is not None:
+        q_ndims = q_xyz.shape.ndims
+    if v.shape.ndims is not None:
+        v_ndims = v.shape.ndims
+    for _ in range(v_ndims - q_ndims):
         q_xyz = tf.expand_dims(q_xyz, axis=0)
-    for _ in range(q_xyz.shape.ndims - v.shape.ndims):
+    for _ in range(q_ndims - v_ndims):
         v = tf.expand_dims(v, axis=0) + tf.zeros_like(q_xyz)
     q_xyz += tf.zeros_like(v)
     v += tf.zeros_like(q_xyz)

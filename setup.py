@@ -25,7 +25,7 @@ except ImportError:
 
 setup(
     name='tfquaternion',
-    version='0.1.3',
+    version='0.1.4',
     description="A differentiable quaternion implementation in tensorflow.",
     long_description=long_description,
     url='https://github.com/PhilJd/tf-quaternion',

@@ -136,17 +136,20 @@ def rotate_vector_by_quaternion(q, v):
         v: A `tf.Tensor` with shape (..., 3)
 
     """
-    return quaternion_to_vector3d(q * vector3d_to_quaternion(v) * q.inverse())
-    #v = tf.convert_to_tensor(v)
-    #q = q.normalized()
-    #w = q.value()[..., 0]
-    #print("w.shape", w.shape)
-    #print("v.shape", w.shape)
-    #q_xyz = q.value()[..., 1:]
-    #print("q_xyz.shape", q_xyz.shape)
-    #t = 2 * tf.cross(q_xyz, v)
-    #print("t.shape", t.shape)
-    #return v + tf.expand_dims(w, axis=-1) * t + tf.cross(q_xyz, t)
+    v = tf.convert_to_tensor(v)
+    q = q.normalized()
+    w = q.value()[..., 0]
+    q_xyz = q.value()[..., 1:]
+    # Broadcast shapes. Todo(phil): Prepare a pull request which adds
+    # broadcasting support to tf.cross
+    for _ in range(v.shape.ndims - q_xyz.shape.ndims):
+        q_xyz = tf.expand_dims(q_xyz, axis=0)
+    for _ in range(q_xyz.shape.ndims - v.shape.ndims):
+        v = tf.expand_dims(v, axis=0) + tf.zeros_like(q_xyz)
+    q_xyz += tf.zeros_like(v)
+    v += tf.zeros_like(q_xyz)
+    t = 2 * tf.cross(q_xyz, v)
+    return v + tf.expand_dims(w, axis=-1) * t + tf.cross(q_xyz, t)
 
 
 # ____________________________________________________________________________

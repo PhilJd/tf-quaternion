@@ -2,3 +2,10 @@
 - add tests for all functions
 - documentation
 - add an example of optimization + images.
+
+
+ for v2:
+- add eps for numerical stability
+- fix norm vs squared norm
+    
+    

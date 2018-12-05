@@ -90,13 +90,13 @@ def quaternion_multiply(a, b):
     """
     a = _prepare_tensor_for_div_mul(a)
     b = _prepare_tensor_for_div_mul(b)
-    w1, x1, y1, z1 = tf.unstack(a, axis=-1, num=4)
-    w2, x2, y2, z2 = tf.unstack(b, axis=-1, num=4)
+    w1, x1, y1, z1 = tf.split(a, num_or_size_splits=4, axis=-1)
+    w2, x2, y2, z2 = tf.split(b, num_or_size_splits=4, axis=-1)
     w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
     x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
     y = w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2
     z = w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2
-    return Quaternion(tf.squeeze(tf.stack((w, x, y, z), axis=-1)))
+    return Quaternion(tf.concat(values=[w, x, y, z], axis=-1))
 
 
 @scope_wrapper
@@ -113,14 +113,14 @@ def quaternion_divide(a, b):
     a = tf.convert_to_tensor(a)
     if a.shape == () or a.shape[-1] == 1:  # scalar
         return Quaternion(tf.multiply(a, b.conj()) / Quaternion(b).norm())
-    bnorm = tf.squeeze(Quaternion(b).norm())
-    w1, x1, y1, z1 = tf.unstack(a, axis=-1, num=4)
-    w2, x2, y2, z2 = tf.unstack(b, axis=-1, num=4)
+    bnorm = Quaternion(b).norm()
+    w1, x1, y1, z1 = tf.split(a, num_or_size_splits=4, axis=-1)
+    w2, x2, y2, z2 = tf.split(b, num_or_size_splits=4, axis=-1)
     w = (w1 * w2 + x1 * x2 + y1 * y2 + z1 * z2) / bnorm
     x = (-w1 * x2 + x1 * w2 - y1 * z2 + z1 * y2) / bnorm
     y = (-w1 * y2 + x1 * z2 + y1 * w2 - z1 * x2) / bnorm
     z = (-w1 * z2 - x1 * y2 + y1 * x2 + z1 * w2) / bnorm
-    return Quaternion(tf.squeeze(tf.stack((w, x, y, z), axis=-1)))
+    return Quaternion(tf.concat(values=[w, x, y, z], axis=-1))
 
 
 @scope_wrapper

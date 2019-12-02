@@ -386,7 +386,7 @@ class Quaternion(object):
     @scope_wrapper
     def norm(self, keepdims=True):
         """Return the norm of the quaternion."""
-        return tf.reduce_sum(tf.square(self._q), axis=-1, keep_dims=keepdims)
+        return tf.reduce_sum(tf.square(self._q), axis=-1, keepdims=keepdims)
 
     @scope_wrapper
     def abs(self, keepdims=True):

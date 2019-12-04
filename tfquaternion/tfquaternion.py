@@ -361,7 +361,8 @@ class Quaternion(object):
         def tr_sub(a, b, c, d):  # computes triangle entries with subtraction
             return 2 * a * b - 2 * c * d
 
-        w, x, y, z = tf.unstack(self.normalized().value(), num=4, axis=-1)
+        end_axis=len(self.normalized().value().shape)-1
+        w, x, y, z = tf.unstack(self.normalized().value(), num=4, axis=end_axis)
         m = [[diag(y, z), tr_sub(x, y, z, w), tr_add(x, z, y, w)],
              [tr_add(x, y, z, w), diag(x, z), tr_sub(y, z, x, w)],
              [tr_sub(x, z, y, w), tr_add(y, z, x, w), diag(x, y)]]

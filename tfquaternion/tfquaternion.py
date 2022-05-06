@@ -152,7 +152,7 @@ def rotate_vector_by_quaternion(q, v, q_ndims=None, v_ndims=None):
     w = q.value()[..., 0]
     q_xyz = q.value()[..., 1:]
     # Broadcast shapes. Todo(phil): Prepare a pull request which adds
-    # broadcasting support to tf.cross
+    # broadcasting support to tf.linalg.cross
     if q_xyz.shape.ndims is not None:
         q_ndims = q_xyz.shape.ndims
     if v.shape.ndims is not None:
@@ -163,8 +163,42 @@ def rotate_vector_by_quaternion(q, v, q_ndims=None, v_ndims=None):
         v = tf.expand_dims(v, axis=0) + tf.zeros_like(q_xyz)
     q_xyz += tf.zeros_like(v)
     v += tf.zeros_like(q_xyz)
-    t = 2 * tf.cross(q_xyz, v)
-    return v + tf.expand_dims(w, axis=-1) * t + tf.cross(q_xyz, t)
+    t = 2 * tf.linalg.cross(q_xyz, v)
+    return v + tf.expand_dims(w, axis=-1) * t + tf.linalg.cross(q_xyz, t)
+
+
+def quaternion_between_3d(u, v, epsilion=1e-6, dtype=tf.float32):
+    """
+    This function will help define a rotation when you know how you wish to map one specific vector
+    in a collection onto another, and apply that transformation to the whole collection.
+
+    Pseudocode was adapted from https://stackoverflow.com/questions/1171849/finding-
+    quaternion-representing-the-rotation-from-one-vector-to-another#:~:text=One%20
+    solution%20is%20to    %20compute,all%20the%20way%20to%20v!
+    """
+    u = tf.math.l2_normalize(u)
+    v = tf.math.l2_normalize(v)
+
+    # The dot / cross product determination produces twice the desired rotation.
+    # Half the rotation can be accomplished by averaging the rotation produced here with a zero
+    # rotation, which is accomplished by simply adding 1 to the dot product.
+    dot = tf.expand_dims(tf.tensordot(u, v, 1), 0) + 1
+    cross = tf.linalg.cross(u, v)
+
+    # But if they rotation is a pure 180 flip then this will cause the dot product to become -1
+    # which will create a zero quaternion, which is not what we want.  So have to manually construct
+    # the quaternion in this case
+    if dot < epsilion:
+	    # need any vector orthogonal to the input.  Try crossing with the x-axis and if that does not
+        # work than crossing with the y axis is guarenteed to...
+        ortho = tf.linalg.cross(u, (1, 0, 0))
+        if tf.reduce_sum(ortho) < epsilion:
+            ortho = tf.linalg.cross(u, (0, 1, 0))
+        q = tfq.Quaternion(tf.math.l2_normalize(tf.concat([dot, ortho], -1)), dtype=dtype)
+        print(f"did a flip! {q}")
+        return q
+    else:
+        return tfq.Quaternion(tf.math.l2_normalize(tf.concat([dot, cross], -1)), dtype=dtype)
 
 
 # ____________________________________________________________________________
@@ -333,12 +367,12 @@ class Quaternion(object):
     @scope_wrapper
     def inverse(self):
         """Compute the inverse of the quaternion, i.e. q.conjugate / q.norm."""
-        return Quaternion(tf.convert_to_tensor(self.conjugate()) / self.norm())
+        return Quaternion(tf.convert_to_tensor(self.conjugate()) / self.norm(), dtype=self.dtype)
 
     @scope_wrapper
     def normalized(self):
         """Compute the normalized quaternion."""
-        return Quaternion(tf.divide(self._q, self.abs()))
+        return Quaternion(tf.divide(self._q, self.abs()), dtype=self.dtype)
 
     @scope_wrapper
     def as_rotation_matrix(self):

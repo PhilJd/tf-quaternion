@@ -167,7 +167,7 @@ def rotate_vector_by_quaternion(q, v, q_ndims=None, v_ndims=None):
     return v + tf.expand_dims(w, axis=-1) * t + tf.linalg.cross(q_xyz, t)
 
 
-def quaternion_between_3d(u, v, epsilion=1e-6, dtype=tf.float32):
+def quaternion_between_3d(u, v, epsilon=1e-6, dtype=tf.float32):
     """
     This function will help define a rotation when you know how you wish to map one specific vector
     in a collection onto another, and apply that transformation to the whole collection.

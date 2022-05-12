@@ -236,7 +236,7 @@ class Quaternion(object):
     # https://stackoverflow.com/questions/40694380/forcing-multiplication-to-use-rmul-instead-of-numpy-array-mul-or-byp)
     __array_priority__ = 1000
 
-    def __init__(self, wxyz=(1, 0, 0, 0), dtype=tf.float32, name=None):
+        def __init__(self, wxyz=(1, 0, 0, 0), dtype=None, name=None):
         """The quaternion constructor.
         Args:
             wxyz: The values for w, x, y, z, a `tf.Tensor` with shape (..., 4).
@@ -253,6 +253,10 @@ class Quaternion(object):
             ValueError, if the last dimension of wxyz is not 4.
             TypeError, if dtype is not a float.
         """
+        try:
+            dtype = dtype or wxyz.dtype
+        except(AttributeError):
+            dtype = tf.float32
         self._q = tf.convert_to_tensor(wxyz, dtype=dtype, name=name)
         self.name = name if name else ""
         self.validate_type(self._q)

@@ -187,7 +187,7 @@ def quaternion_between_3d(u, v, epsilon=1e-6, dtype=tf.float32):
 
     # But if they rotation is a pure 180 flip then this will cause the dot product to become -1
     # which will create a zero quaternion, which is not what we want. So have to manually construct
-    # the quaternion in this case
+    # the quaternion in this case.
     if dot < epsilion:
 	    # need any vector orthogonal to the input.  Try crossing with the x-axis and if that does not
         # work than crossing with the y axis is guarenteed to...

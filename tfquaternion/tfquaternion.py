@@ -167,14 +167,26 @@ def rotate_vector_by_quaternion(q, v, q_ndims=None, v_ndims=None):
     return v + tf.expand_dims(w, axis=-1) * t + tf.linalg.cross(q_xyz, t)
 
 
-def quaternion_between_3d(u, v, epsilon=1e-6, dtype=tf.float32):
+@scope_wrapper
+def get_rotation_quaternion_from_u_to_v(u, v, epsilon=1e-6, dtype=tf.float32):
     """
-    This function will help define a rotation when you know how you wish to map one specific vector
-    in a collection onto another, and apply that transformation to the whole collection.
-
+    Return a quaternion that will rotate one vector u onto another, v.
+    
+    Given v amd u, this function computes q such that u = rotate_vector_by_quaternion(q, v).
+    
     Pseudocode was adapted from https://stackoverflow.com/questions/1171849/finding-
     quaternion-representing-the-rotation-from-one-vector-to-another#:~:text=One%20
-    solution%20is%20to    %20compute,all%20the%20way%20to%20v!
+    solution%20is%20to%20compute,all%20the%20way%20to%20v!
+    
+    Args:
+    	u: A `tf.Tensor` with shape (..., 3)
+	v: A `tf.Tensor` with shape (..., 3)
+	epsilon: a float, optional.  A small number used to avoid divide by zero, which
+	    occurs when the rotation is a full flip (v -> -1)
+	dtype: The type used for the quaternion, must be a floating point
+            number, i.e. one of tf.float16, tf.float32, tf.float64.
+	    
+    Returns: A `Quaternion` with shape (..., 4)
     """
     u = tf.math.l2_normalize(u)
     v = tf.math.l2_normalize(v)
@@ -185,17 +197,16 @@ def quaternion_between_3d(u, v, epsilon=1e-6, dtype=tf.float32):
     dot = tf.expand_dims(tf.tensordot(u, v, 1), 0) + 1
     cross = tf.linalg.cross(u, v)
 
-    # But if they rotation is a pure 180 flip then this will cause the dot product to become -1
-    # which will create a zero quaternion, which is not what we want. So have to manually construct
-    # the quaternion in this case.
+    # If the rotation is a pure 180 flip then the dot product will be -1 and the cross
+    # will be (0, 0, 0), so that quaternion generated will be a zero quaterion, which is
+    # not correct.
     if dot < epsilion:
-	    # need any vector orthogonal to the input.  Try crossing with the x-axis and if that does not
-        # work than crossing with the y axis is guarenteed to...
+	# need any vector orthogonal to the input.  To get this, try crossing with the x-axis.
+	# This could fail in the special case that u is the x-axis, but in that case
         ortho = tf.linalg.cross(u, (1, 0, 0))
         if tf.reduce_sum(ortho) < epsilion:
             ortho = tf.linalg.cross(u, (0, 1, 0))
         q = tfq.Quaternion(tf.math.l2_normalize(tf.concat([dot, ortho], -1)), dtype=dtype)
-        print(f"did a flip! {q}")
         return q
     else:
         return tfq.Quaternion(tf.math.l2_normalize(tf.concat([dot, cross], -1)), dtype=dtype)

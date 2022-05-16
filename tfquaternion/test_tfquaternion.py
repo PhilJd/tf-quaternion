@@ -226,6 +226,74 @@ class TfquaternionTest(AutoEvalTestCase):
             self.assertAllEqual(type(tf.convert_to_tensor(ref)), tf.Tensor)
             # reduce sum internally calls tf.convert_to_tensor
             self.assertAllEqual(tf.reduce_sum(ref), 1.0)
+            
+    def test_rotation_from_u_to_v(self):
+        for dtype, epsilon in ((tf.float16, 1e-2), (tf.float32, 1e-5), (tf.float64, 1e-8)):
+            test_vector_count = 20
+            u_list = tf.random.uniform((test_vector_count, 3), dtype=dtype)
+            u_list = tf.math.l2_normalize(u_list, axis=1)
+            v_list = tf.random.uniform((test_vector_count, 3), dtype=dtype)
+            v_list = tf.math.l2_normalize(v_list, axis=1)
+
+            # append some hard-coded test cases, to make sure that we hit the special case
+            # in a special case that is flipping the x-axis, as well as some others like
+            # no rotation.
+            u_manuals = tf.constant(
+                (
+                    (1, 0, 0),
+                    (1, 0, 0),
+                    (1, 0, 0),
+                    (-1, 0, 0),
+                    (-1, 0, 0),
+                    (-1, 0, 0),
+                    (1, 1, 1),
+                    (1, 1, 1),
+                ),
+                dtype=dtype
+            )
+            v_manuals = tf.constant(
+                (
+                    (1, 0, 0),
+                    (-1, 0, 0),
+                    (0, 1, 0),
+                    (-1, 0, 0),
+                    (1, 0, 0),
+                    (0, 1, 0),
+                    (1, 1, 1),
+                    (-1, -1, -1),
+                ),
+                dtype=dtype
+            )
+
+            u_list = tf.concat([u_list, u_manuals], 0)
+            v_list = tf.concat([v_list, v_manuals], 0)
+            count = u_list.shape[0]
+
+            # Test that we can correctly rotate u onto v individually
+            for i in range(count):
+                u = u_list[i]
+                v = v_list[i]
+                q = tfq.get_rotation_quaternion_from_u_to_v(u, v, epsilon=epsilon)
+                v_computed = tfq.rotate_vector_by_quaternion(q, u)
+
+                assert tf.reduce_all(v - v_computed < epsilon)
+
+            # Test that flipping u works correctly
+            for i in range(count):
+                u = u_list[i]
+                q = tfq.get_rotation_quaternion_from_u_to_v(u, -u, epsilon=epsilon)
+                neg_u = tfq.rotate_vector_by_quaternion(q, u)
+                assert tf.reduce_all(u + neg_u < epsilon)
+
+            # Test that we can correctly rotate u onto v in a batch
+            q = tfq.get_rotation_quaternion_from_u_to_v(u_list, v_list, epsilon=epsilon)
+            v_computed = tfq.rotate_vector_by_quaternion(q, u_list)
+            assert tf.reduce_all(v_list - v_computed < epsilon)
+
+            # Test that flipping u works in a batch
+            q = tfq.get_rotation_quaternion_from_u_to_v(u_list, -u_list, epsilon=epsilon)
+            neg_u = tfq.rotate_vector_by_quaternion(q, u_list)
+            assert tf.reduce_all(u_list + neg_u < epsilon)
 
 class QuaternionTest(AutoEvalTestCase):
     """ Tests for the member functions of class Quaternion """

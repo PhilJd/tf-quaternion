@@ -236,7 +236,7 @@ class Quaternion(object):
     # https://stackoverflow.com/questions/40694380/forcing-multiplication-to-use-rmul-instead-of-numpy-array-mul-or-byp)
     __array_priority__ = 1000
 
-        def __init__(self, wxyz=(1, 0, 0, 0), dtype=None, name=None):
+    def __init__(self, wxyz=(1, 0, 0, 0), dtype=None, name=None):
         """The quaternion constructor.
         Args:
             wxyz: The values for w, x, y, z, a `tf.Tensor` with shape (..., 4).

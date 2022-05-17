@@ -270,30 +270,27 @@ class TfquaternionTest(AutoEvalTestCase):
             count = u_list.shape[0]
 
             # Test that we can correctly rotate u onto v individually
-            for i in range(count):
-                u = u_list[i]
-                v = v_list[i]
+            for u, v in zip(u_list, v_list):
                 q = tfq.get_rotation_quaternion_from_u_to_v(u, v, epsilon=epsilon)
                 v_computed = tfq.rotate_vector_by_quaternion(q, u)
 
-                assert tf.reduce_all(v - v_computed < epsilon)
+                self.assertAllLess(v - v_computed, epsilon)
 
             # Test that flipping u works correctly
-            for i in range(count):
-                u = u_list[i]
+            for u in u_list:
                 q = tfq.get_rotation_quaternion_from_u_to_v(u, -u, epsilon=epsilon)
                 neg_u = tfq.rotate_vector_by_quaternion(q, u)
-                assert tf.reduce_all(u + neg_u < epsilon)
+                self.assertAllLess(u + neg_u, epsilon)
 
             # Test that we can correctly rotate u onto v in a batch
             q = tfq.get_rotation_quaternion_from_u_to_v(u_list, v_list, epsilon=epsilon)
             v_computed = tfq.rotate_vector_by_quaternion(q, u_list)
-            assert tf.reduce_all(v_list - v_computed < epsilon)
+            self.assertAllLess(v_list - v_computed, epsilon)
 
             # Test that flipping u works in a batch
             q = tfq.get_rotation_quaternion_from_u_to_v(u_list, -u_list, epsilon=epsilon)
             neg_u = tfq.rotate_vector_by_quaternion(q, u_list)
-            assert tf.reduce_all(u_list + neg_u < epsilon)
+            self.assertAllLess(u_list + neg_u, epsilon)
 
 class QuaternionTest(AutoEvalTestCase):
     """ Tests for the member functions of class Quaternion """

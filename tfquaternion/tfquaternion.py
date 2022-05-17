@@ -195,8 +195,9 @@ def get_rotation_quaternion_from_u_to_v(u, v, epsilon=1e-6, dtype=tf.float32):
     y_axis = tf.cast(tf.broadcast_to((0, 1, 0), u.shape), dtype)
     ortho_x = tf.linalg.cross(u, x_axis)
     ortho_y = tf.linalg.cross(u, y_axis)
+    is_parallel_to_x_axis = tf.less(tf.reduce_sum(tf.multiply(ortho_x, ortho_x), -1, keepdims=True), epsilon)
     ortho = tf.where(
-        tf.less(tf.reduce_sum(tf.multiply(ortho_x, ortho_x), -1, keepdims=True), epsilon),
+        is_parallel_to_x_axis,
         ortho_y,
         ortho_x
     )
@@ -210,17 +211,6 @@ def get_rotation_quaternion_from_u_to_v(u, v, epsilon=1e-6, dtype=tf.float32):
         q_untested
     )
     return Quaternion(q, dtype=dtype)
-
-    """if dot < epsilon:
-        # need any vector orthogonal to the input.  To get this, try crossing with the x-axis.
-        # This could fail in the special case that u is the x-axis, but in that case
-        ortho = tf.linalg.cross(u, (1, 0, 0))
-        if tf.reduce_sum(ortho) < epsilion:
-            ortho = tf.linalg.cross(u, (0, 1, 0))
-        q = Quaternion(tf.math.l2_normalize(tf.concat([dot, ortho], -1)), dtype=dtype)
-        return q
-    else:
-        return Quaternion(tf.math.l2_normalize(tf.concat([dot, cross], -1)), dtype=dtype)"""
 
 
 # ____________________________________________________________________________
@@ -253,10 +243,8 @@ class Quaternion(object):
             ValueError, if the last dimension of wxyz is not 4.
             TypeError, if dtype is not a float.
         """
-        try:
-            dtype = dtype or wxyz.dtype
-        except(AttributeError):
-            dtype = tf.float32
+        if dtype is None:
+            dtype = wxyz.dtype if isinstance(wxyz, (tf.Tensor, tf.Variable. np.ndarray)) else tf.float32
         self._q = tf.convert_to_tensor(wxyz, dtype=dtype, name=name)
         self.name = name if name else ""
         self.validate_type(self._q)

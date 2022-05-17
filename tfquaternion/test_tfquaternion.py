@@ -227,7 +227,7 @@ class TfquaternionTest(AutoEvalTestCase):
             # reduce sum internally calls tf.convert_to_tensor
             self.assertAllEqual(tf.reduce_sum(ref), 1.0)
             
-    def test_rotation_from_u_to_v(self):
+    def test_get_rotation_quaternion_from_u_to_v(self):
         for dtype, epsilon in ((tf.float16, 1e-2), (tf.float32, 1e-5), (tf.float64, 1e-8)):
             test_vector_count = 20
             u_list = tf.random.uniform((test_vector_count, 3), dtype=dtype)
